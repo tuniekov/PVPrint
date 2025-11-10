@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model package="pvprint" baseClass="xPDOObject" platform="mysql" defaultEngine="InnoDB" phppvprint-package="pvprint"
+       version="1.1">
+    
+    <!-- Таблица принт-серверов -->
+    <object class="pvPrintServer" table="pv_print_servers" extends="xPDOSimpleObject">
+        <field key="name" dbtype="varchar" precision="255" phptype="string" null="false" default="" />
+        <field key="url" dbtype="varchar" precision="500" phptype="string" null="false" default="" />
+        <field key="api_key" dbtype="varchar" precision="255" phptype="string" null="false" default="" />
+        <field key="active" dbtype="tinyint" precision="1" phptype="boolean" null="false" default="1" />
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="updated_at" dbtype="datetime" phptype="datetime" null="true" />
+        
+        <index alias="name" name="name" primary="false" unique="false" type="BTREE">
+            <column key="name" length="" collation="A" null="false" />
+        </index>
+        <index alias="active" name="active" primary="false" unique="false" type="BTREE">
+            <column key="active" length="" collation="A" null="false" />
+        </index>
+        
+        <aggregate alias="Printers" class="pvPrinter" local="id" foreign="server_id" cardinality="many" owner="local" />
+    </object>
+    
+    <!-- Таблица групп принтеров -->
+    <object class="pvPrinterGroup" table="pv_printer_groups" extends="xPDOSimpleObject">
+        <field key="name" dbtype="varchar" precision="255" phptype="string" null="false" default="" />
+        <field key="description" dbtype="text" phptype="string" null="true" />
+        <field key="active" dbtype="tinyint" precision="1" phptype="boolean" null="false" default="1" />
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="updated_at" dbtype="datetime" phptype="datetime" null="true" />
+        
+        <index alias="name" name="name" primary="false" unique="false" type="BTREE">
+            <column key="name" length="" collation="A" null="false" />
+        </index>
+        <index alias="active" name="active" primary="false" unique="false" type="BTREE">
+            <column key="active" length="" collation="A" null="false" />
+        </index>
+        
+        <aggregate alias="Printers" class="pvPrinter" local="id" foreign="group_id" cardinality="many" owner="local" />
+    </object>
+    
+    <!-- Таблица принтеров -->
+    <object class="pvPrinter" table="pv_printers" extends="xPDOSimpleObject">
+        <field key="server_id" dbtype="int" precision="10" phptype="integer" null="false" default="0" />
+        <field key="group_id" dbtype="int" precision="10" phptype="integer" null="false" default="0" />
+        <field key="short_name" dbtype="varchar" precision="100" phptype="string" null="false" default="" />
+        <field key="name" dbtype="varchar" precision="161" phptype="string" null="false" default="" />
+        <field key="description" dbtype="text" phptype="string" null="true" />
+        <field key="is_virtual" dbtype="tinyint" precision="1" phptype="boolean" null="false" default="0" />
+        <field key="active" dbtype="tinyint" precision="1" phptype="boolean" null="false" default="1" />
+        <field key="created_at" dbtype="datetime" phptype="datetime" null="true" />
+        <field key="updated_at" dbtype="datetime" phptype="datetime" null="true" />
+        
+        <index alias="server_id" name="server_id" primary="false" unique="false" type="BTREE">
+            <column key="server_id" length="" collation="A" null="false" />
+        </index>
+        <index alias="group_id" name="group_id" primary="false" unique="false" type="BTREE">
+            <column key="group_id" length="" collation="A" null="false" />
+        </index>
+        <index alias="short_name" name="short_name" primary="false" unique="false" type="BTREE">
+            <column key="short_name" length="" collation="A" null="false" />
+        </index>
+        <index alias="name" name="name" primary="false" unique="false" type="BTREE">
+            <column key="name" length="" collation="A" null="false" />
+        </index>
+        <index alias="is_virtual" name="is_virtual" primary="false" unique="false" type="BTREE">
+            <column key="is_virtual" length="" collation="A" null="false" />
+        </index>
+        <index alias="active" name="active" primary="false" unique="false" type="BTREE">
+            <column key="active" length="" collation="A" null="false" />
+        </index>
+        
+        <aggregate alias="Server" class="pvPrintServer" local="server_id" foreign="id" cardinality="one" owner="foreign" />
+        <aggregate alias="Group" class="pvPrinterGroup" local="group_id" foreign="id" cardinality="one" owner="foreign" />
+    </object>
+    
+</model>

@@ -1,0 +1,27 @@
+{
+  "name": "printserver",
+  "version": "1.0.0",
+  "description": "Print Server API для получения списка принтеров Windows/Linux",
+  "main": "printserver.js",
+  "type": "module",
+  "scripts": {
+    "start": "node printserver.js",
+    "dev": "node --watch printserver.js"
+  },
+  "keywords": [
+    "print",
+    "printer",
+    "cups",
+    "windows",
+    "linux",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}
