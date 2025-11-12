@@ -347,10 +347,6 @@ const handlePrint = async () => {
       html = await props.getHtmlContent()
     }
     
-    if (!html) {
-      throw new Error('HTML контент не предоставлен')
-    }
-    
     // Если передан кастомный обработчик печати
     if (props.customPrintHandler) {
       const result = await props.customPrintHandler(
@@ -365,6 +361,10 @@ const handlePrint = async () => {
       emit('print-success', result)
       closeMenu()
       return
+    }
+
+    if (!html) {
+      throw new Error('HTML контент не предоставлен')
     }
     
     // Проверка на виртуальный PDF принтер
