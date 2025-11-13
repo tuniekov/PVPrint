@@ -91,8 +91,14 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
-import { apiCtor, useNotifications } from 'pvtables/dist/pvtables'
 import html2pdf from 'html2pdf.js'
+
+// Получаем зависимости из глобального объекта, предоставленного ComponentLoader
+const { useNotifications, apiCtor } = window.PVTablesAPI || {}
+
+if (!useNotifications || !apiCtor) {
+  console.error('PVTablesAPI не найден. Убедитесь, что библиотека PVTables загружена.')
+}
 
 const props = defineProps({
   // HTML контент для печати (можно передать извне)
