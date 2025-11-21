@@ -227,14 +227,14 @@ const filteredPrinters = computed(() => {
   // Фильтр по группам
   if (props.group_ids && props.group_ids.length > 0) {
     filtered = filtered.filter(printer => 
-      props.group_ids.includes(printer.group_id)
+      props.group_ids.includes(Number(printer.group_id))
     )
   }
   
   // Фильтр по серверам
   if (props.server_ids && props.server_ids.length > 0) {
     filtered = filtered.filter(printer => 
-      props.server_ids.includes(printer.server_id)
+      props.server_ids.includes(Number(printer.server_id))
     )
   }
   
