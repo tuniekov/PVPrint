@@ -529,7 +529,7 @@ const server = http.createServer(async (req, res) => {
                 });
                 return;
             }
-            
+            console.log('body.printer',body.printer)
             if (!body.printer) {
                 sendJSON(res, 400, {
                     success: false,

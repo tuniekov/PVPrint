@@ -188,7 +188,7 @@ class PVPrint
             return $this->error('HTML код не может быть пустым');
         }
         
-        if (empty($printer)) {
+        if (empty($printerName)) {
             return $this->error('Имя принтера не указано');
         }
         
@@ -208,7 +208,7 @@ class PVPrint
         // Подготовка данных для отправки
         $postData = [
             'html' => $html,
-            'printer' => $printer,
+            'printer' => $printerName,
             'options' => $options
         ];
         
