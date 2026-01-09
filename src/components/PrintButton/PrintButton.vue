@@ -1,14 +1,19 @@
 <template>
   <div class="print-button-wrapper">
-    <button 
-      class="print-button"
-      @click="handlePrint"
-      :disabled="!selectedPrinter || printing"
-    >
-      <i class="pi pi-print"></i>
-      <span class="printer-name">{{ printerLabel }}</span>
-      <i class="pi pi-chevron-down dropdown-icon" @click.stop="toggleMenu"></i>
-    </button>
+    <InputGroup>
+      <Button
+        :label="printerLabel"
+        icon="pi pi-print"
+        @click="handlePrintClick"
+        :disabled="printing"
+        :loading="printing"
+      />
+      <Button
+        icon="pi pi-chevron-down"
+        @click.stop="toggleMenu"
+        :disabled="printing"
+      />
+    </InputGroup>
     
     <div v-if="showMenu" class="print-menu" v-click-outside="closeMenu">
       <div class="menu-section">
@@ -92,6 +97,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import html2pdf from 'html2pdf.js'
+import { Button, InputGroup } from 'pvtables/dist/pvtables'
 
 // Получаем зависимости из глобального объекта, предоставленного ComponentLoader
 const { useNotifications, apiCtor } = window.PVTablesAPI || {}
@@ -242,8 +248,26 @@ const filteredPrinters = computed(() => {
 })
 
 // Методы
-const toggleMenu = () => {
+const toggleMenu = (event) => {
+  console.log('toggleMenu called, current showMenu:', showMenu.value)
   showMenu.value = !showMenu.value
+  console.log('toggleMenu after, new showMenu:', showMenu.value)
+}
+
+const handlePrintClick = () => {
+  console.log('handlePrintClick called, selectedPrinter:', selectedPrinter.value)
+  // Если принтер не выбран, показываем меню выбора
+  if (!selectedPrinter.value) {
+    showMenu.value = true
+    console.log('Opening menu because no printer selected')
+    notify('info', {
+      detail: 'Выберите принтер для печати'
+    })
+    return
+  }
+  
+  // Иначе выполняем печать
+  handlePrint()
 }
 
 const closeMenu = () => {
@@ -313,6 +337,19 @@ const applySettings = (settings) => {
 
 const selectPrinter = (printer) => {
   selectedPrinter.value = printer
+  
+  // Автоматически сохраняем выбор для страницы
+  if (props.pageKey) {
+    const settings = {
+      printerId: printer.id,
+      options: { ...printOptions.value }
+    }
+    localStorage.setItem(`print_settings_${props.pageKey}`, JSON.stringify(settings))
+    
+    notify('success', {
+      detail: `Принтер "${printer.short_name}" сохранен для этой страницы`
+    })
+  }
 }
 
 const saveSettings = () => {
@@ -447,39 +484,6 @@ watch(() => props.pageKey, () => {
 .print-button-wrapper {
   position: relative;
   display: inline-block;
-}
-
-.print-button {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.2s;
-}
-
-.print-button:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.print-button:disabled {
-  background: #6c757d;
-  cursor: not-allowed;
-  opacity: 0.6;
-}
-
-.printer-name {
-  font-weight: 500;
-}
-
-.dropdown-icon {
-  margin-left: 0.25rem;
-  font-size: 12px;
 }
 
 .print-menu {
