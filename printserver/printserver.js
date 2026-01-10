@@ -5,6 +5,7 @@ import os from 'os';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import iconv from 'iconv-lite';
 import config from './config.js';
 
 const execAsync = promisify(exec);
@@ -247,8 +248,8 @@ async function getWindowsPrinters() {
         
         const command = 'powershell -Command "Get-Printer | Select-Object Name, DriverName, PortName, Shared, Published, PrinterStatus | ConvertTo-Json"';
         
-        const { stdout, stderr } = await execAsync(command, { 
-            encoding: 'utf8',
+        const { stdout, stderr } = await execAsync(command, {
+            encoding: 'binary',
             maxBuffer: 1024 * 1024
         });
         
@@ -261,7 +262,9 @@ async function getWindowsPrinters() {
             return [];
         }
         
-        let printers = JSON.parse(stdout);
+        // Конвертируем вывод из cp866 (DOS Cyrillic) в utf-8
+        const decodedOutput = iconv.decode(Buffer.from(stdout, 'binary'), 'cp866');
+        let printers = JSON.parse(decodedOutput);
         
         if (!Array.isArray(printers)) {
             printers = [printers];
