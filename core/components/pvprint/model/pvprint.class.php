@@ -445,13 +445,8 @@ class PVPrint
                 // Обновление существующего принтера
                 $existingPrinter->set('updated_at', date('Y-m-d H:i:s'));
                 
-                // Обновить статус если изменился
-                $newStatus = (isset($remotePrinter['status']) && 
-                             in_array($remotePrinter['status'], ['Normal', 'Idle'])) ? 1 : 0;
-                
-                if ($existingPrinter->get('active') != $newStatus) {
-                    $existingPrinter->set('active', $newStatus);
-                }
+                // Не изменяем статус active для существующих принтеров
+                // Статус управляется вручную администратором
                 
                 $existingPrinter->save();
                 $updated++;
