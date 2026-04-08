@@ -15,7 +15,7 @@
       />
     </InputGroup>
     
-    <div v-if="showMenu" class="print-menu" v-click-outside="closeMenu">
+    <div v-if="showMenu" ref="printMenuRef" class="print-menu" :style="menuStyle" v-click-outside="closeMenu">
       <div class="menu-section">
         <h4>Выбор принтера</h4>
         <div class="printer-list">
@@ -95,7 +95,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import html2pdf from 'html2pdf.js'
 import { Button, InputGroup } from 'pvtables/dist/pvtables'
 
@@ -198,6 +198,10 @@ defineExpose({
 // API клиент для принтеров
 const api_pvPrinter = apiCtor('pvPrinter')
 
+// Refs
+const printMenuRef = ref(null)
+const menuStyle = ref({})
+
 // Состояние
 const showMenu = ref(false)
 const printers = ref([])
@@ -247,11 +251,41 @@ const filteredPrinters = computed(() => {
   return filtered
 })
 
+// Позиционирование меню в пределах viewport
+const updateMenuPosition = async () => {
+  await nextTick()
+  const menu = printMenuRef.value
+  if (!menu) return
+
+  const rect = menu.getBoundingClientRect()
+  const style = {}
+
+  // Если выходит за правый край — прижать к правому краю кнопки
+  if (rect.right > window.innerWidth) {
+    style.left = 'auto'
+    style.right = '0px'
+  }
+  // Если выходит за левый край — прижать к левому краю кнопки
+  if (rect.left < 0) {
+    style.left = '0px'
+    style.right = 'auto'
+  }
+  // Если выходит за нижний край — открыть вверх
+  if (rect.bottom > window.innerHeight) {
+    style.top = 'auto'
+    style.bottom = 'calc(100% + 4px)'
+  }
+
+  menuStyle.value = style
+}
+
 // Методы
 const toggleMenu = (event) => {
-  console.log('toggleMenu called, current showMenu:', showMenu.value)
   showMenu.value = !showMenu.value
-  console.log('toggleMenu after, new showMenu:', showMenu.value)
+  if (showMenu.value) {
+    menuStyle.value = {}
+    updateMenuPosition()
+  }
 }
 
 const handlePrintClick = () => {
@@ -259,7 +293,8 @@ const handlePrintClick = () => {
   // Если принтер не выбран, показываем меню выбора
   if (!selectedPrinter.value) {
     showMenu.value = true
-    console.log('Opening menu because no printer selected')
+    menuStyle.value = {}
+    updateMenuPosition()
     notify('info', {
       detail: 'Выберите принтер для печати'
     })
@@ -490,6 +525,7 @@ watch(() => props.pageKey, () => {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
+  right: auto;
   background: white;
   border: 1px solid #dee2e6;
   border-radius: 4px;
