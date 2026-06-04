@@ -1,18 +1,35 @@
 <template>
   <div class="print-button-wrapper" ref="printWrapperRef">
     <InputGroup>
-      <Button
-        :label="printerLabel"
-        icon="pi pi-print"
-        @click="handlePrintClick"
-        :disabled="printing"
-        :loading="printing"
-      />
-      <Button
-        icon="pi pi-chevron-down"
-        @click.stop="toggleMenu"
-        :disabled="printing"
-      />
+      <template v-if="compact">
+        <button
+          type="button"
+          class="tan-action-btn p-button-success"
+          :title="printerLabel"
+          :disabled="printing"
+          @click="handlePrintClick"
+        ><i class="pi pi-print"></i></button>
+        <button
+          type="button"
+          class="tan-action-btn p-button-success"
+          :disabled="printing"
+          @click.stop="toggleMenu"
+        ><i class="pi pi-chevron-down"></i></button>
+      </template>
+      <template v-else>
+        <Button
+          :label="printerLabel"
+          icon="pi pi-print"
+          @click="handlePrintClick"
+          :disabled="printing"
+          :loading="printing"
+        />
+        <Button
+          icon="pi pi-chevron-down"
+          @click.stop="toggleMenu"
+          :disabled="printing"
+        />
+      </template>
     </InputGroup>
 
     <!-- Меню телепортируется в body, чтобы не обрезаться overflow:hidden родителей (например ячейкой таблицы). -->
@@ -141,6 +158,11 @@ const props = defineProps({
   server_ids: {
     type: Array,
     default: () => []
+  },
+  // Компактный режим — только иконка принтера, без подписи (например, в строке таблицы).
+  compact: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -562,6 +584,30 @@ watch(() => props.pageKey, () => {
 .print-button-wrapper {
   position: relative;
   display: inline-block;
+}
+
+/* tan-action-btn — копия определения из PVTables/TanTable.css.
+   Нужна здесь т.к. CSS PVTables может не загрузиться до PrintButton (динамическая загрузка). */
+.tan-action-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--p-button-icon-only-width, 2rem); height: var(--p-button-icon-only-width, 2rem);
+  padding: 0; box-sizing: border-box;
+  border: 1px solid transparent; border-radius: var(--p-button-border-radius, 6px); cursor: pointer;
+  background: transparent; color: var(--p-text-color, #374151);
+  font-size: var(--p-button-icon-font-size, 1rem);
+  transition: background .15s, color .15s, border-color .15s;
+}
+.tan-action-btn:hover { background: var(--p-surface-200, #e9ecef); }
+.tan-action-btn:disabled { opacity: .55; cursor: default; }
+
+.tan-action-btn.p-button-success {
+  background: var(--p-button-success-background, #22c55e);
+  color: var(--p-button-success-color, #fff);
+  border-color: var(--p-button-success-border-color, #22c55e);
+}
+.tan-action-btn.p-button-success:hover {
+  background: var(--p-button-success-hover-background, #16a34a);
+  border-color: var(--p-button-success-hover-border-color, #16a34a);
 }
 
 .print-menu {
