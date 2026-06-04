@@ -1,5 +1,5 @@
 <template>
-  <div class="print-button-wrapper">
+  <div class="print-button-wrapper" ref="printWrapperRef">
     <InputGroup>
       <Button
         :label="printerLabel"
@@ -14,8 +14,10 @@
         :disabled="printing"
       />
     </InputGroup>
-    
-    <div v-if="showMenu" ref="printMenuRef" class="print-menu" :style="menuStyle" v-click-outside="closeMenu">
+
+    <!-- Меню телепортируется в body, чтобы не обрезаться overflow:hidden родителей (например ячейкой таблицы). -->
+    <Teleport to="body">
+    <div v-if="showMenu" ref="printMenuRef" class="print-menu print-menu-teleported" :style="menuStyle" v-click-outside="closeMenu">
       <div class="menu-section">
         <h4>Выбор принтера</h4>
         <div class="printer-list">
@@ -82,8 +84,8 @@
         
         <div class="param-group checkbox-group" v-if="pageKey">
           <label>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               v-model="saveForPage"
             >
             Сохранить для этой страницы
@@ -91,6 +93,7 @@
         </div>
       </div>
     </div>
+    </Teleport>
   </div>
 </template>
 
@@ -201,6 +204,7 @@ const api_pvPrinter = apiCtor('pvPrinter')
 // Refs
 const printMenuRef = ref(null)
 const menuStyle = ref({})
+const printWrapperRef = ref(null)
 
 // Состояние
 const showMenu = ref(false)
@@ -251,31 +255,33 @@ const filteredPrinters = computed(() => {
   return filtered
 })
 
-// Позиционирование меню в пределах viewport
+// Позиционирование меню в пределах viewport.
+// Меню телепортировано в body (position:fixed) — координаты считаем по trigger-кнопке.
 const updateMenuPosition = async () => {
   await nextTick()
-  const menu = printMenuRef.value
-  if (!menu) return
+  const wrapper = printWrapperRef.value
+  const menu    = printMenuRef.value
+  if (!wrapper || !menu) return
 
-  const rect = menu.getBoundingClientRect()
-  const style = {}
+  const trigger = wrapper.getBoundingClientRect()
+  const menuRect = menu.getBoundingClientRect()
+  const style = { position: 'fixed' }
 
-  // Если выходит за правый край — прижать к правому краю кнопки
-  if (rect.right > window.innerWidth) {
-    style.left = 'auto'
-    style.right = '0px'
+  // Базово — под кнопкой, слева.
+  let top  = trigger.bottom + 4
+  let left = trigger.left
+
+  // Не выходим за правый край.
+  if (left + menuRect.width > window.innerWidth) {
+    left = Math.max(4, trigger.right - menuRect.width)
   }
-  // Если выходит за левый край — прижать к левому краю кнопки
-  if (rect.left < 0) {
-    style.left = '0px'
-    style.right = 'auto'
-  }
-  // Если выходит за нижний край — открыть вверх
-  if (rect.bottom > window.innerHeight) {
-    style.top = 'auto'
-    style.bottom = 'calc(100% + 4px)'
+  // Не выходим за нижний — открываем вверх.
+  if (top + menuRect.height > window.innerHeight && trigger.top - menuRect.height - 4 > 0) {
+    top = trigger.top - menuRect.height - 4
   }
 
+  style.top  = `${Math.round(top)}px`
+  style.left = `${Math.round(left)}px`
   menuStyle.value = style
 }
 
@@ -533,6 +539,14 @@ watch(() => props.pageKey, () => {
   min-width: 300px;
   max-width: 400px;
   z-index: 1000;
+}
+
+/* Телепортированный в body вариант — позиционируется fixed по координатам trigger button. */
+.print-menu-teleported {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 10000;
 }
 
 .menu-section {
