@@ -34,6 +34,8 @@
               <span class="printer-full-name">{{ printer.name }}</span>
             </div>
             <i v-if="selectedPrinter?.id === printer.id" class="pi pi-check"></i>
+            <span v-if="isDefaultPrinter(printer.id)" class="printer-badge default-badge" title="По умолчанию">★</span>
+            <span v-if="isPagePrinter(printer.id)" class="printer-badge page-badge" title="Для этой страницы">●</span>
           </div>
           <div v-if="filteredPrinters.length === 0" class="no-printers">
             Нет доступных принтеров
@@ -328,8 +330,9 @@ const loadPrinters = async () => {
     
     if (response.success) {
       printers.value = response.data.rows || []
-      
-      // Загрузить сохраненные настройки
+
+      // Загрузить сохраненные настройки и отметки принтеров
+      loadSavedPrinterIds()
       loadSavedSettings()
     } else {
       notify('error', { 
@@ -351,15 +354,17 @@ const loadSavedSettings = () => {
     if (pageSettings) {
       const settings = JSON.parse(pageSettings)
       applySettings(settings)
+      saveForPage.value = true
       return
     }
   }
-  
+
   // Загрузить настройки по умолчанию
   const defaultSettings = localStorage.getItem('print_settings_default')
   if (defaultSettings) {
     const settings = JSON.parse(defaultSettings)
     applySettings(settings)
+    saveAsDefault.value = true
   }
 }
 
@@ -376,36 +381,52 @@ const applySettings = (settings) => {
   }
 }
 
+// ID принтеров из localStorage для отметки в списке
+const defaultPrinterId = ref(null)
+const pagePrinterId = ref(null)
+
+const isDefaultPrinter = (id) => defaultPrinterId.value === id
+const isPagePrinter = (id) => pagePrinterId.value === id
+
+const loadSavedPrinterIds = () => {
+  const defaultSettings = localStorage.getItem('print_settings_default')
+  if (defaultSettings) {
+    defaultPrinterId.value = JSON.parse(defaultSettings).printerId || null
+  }
+  if (props.pageKey) {
+    const pageSettings = localStorage.getItem(`print_settings_${props.pageKey}`)
+    if (pageSettings) {
+      pagePrinterId.value = JSON.parse(pageSettings).printerId || null
+    }
+  }
+}
+
 const selectPrinter = (printer) => {
   selectedPrinter.value = printer
-  
-  // Автоматически сохраняем выбор для страницы
-  if (props.pageKey) {
-    const settings = {
-      printerId: printer.id,
-      options: { ...printOptions.value }
-    }
+  // Если галочки уже стоят — сразу сохраняем
+  saveSettingsIfNeeded()
+}
+
+const saveSettingsIfNeeded = () => {
+  if (!selectedPrinter.value) return
+  const settings = {
+    printerId: selectedPrinter.value.id,
+    options: { ...printOptions.value }
+  }
+
+  if (saveAsDefault.value) {
+    localStorage.setItem('print_settings_default', JSON.stringify(settings))
+    defaultPrinterId.value = selectedPrinter.value.id
+  }
+
+  if (saveForPage.value && props.pageKey) {
     localStorage.setItem(`print_settings_${props.pageKey}`, JSON.stringify(settings))
-    
-    notify('success', {
-      detail: `Принтер "${printer.short_name}" сохранен для этой страницы`
-    })
+    pagePrinterId.value = selectedPrinter.value.id
   }
 }
 
 const saveSettings = () => {
-  const settings = {
-    printerId: selectedPrinter.value?.id,
-    options: { ...printOptions.value }
-  }
-  
-  if (saveAsDefault.value) {
-    localStorage.setItem('print_settings_default', JSON.stringify(settings))
-  }
-  
-  if (saveForPage.value && props.pageKey) {
-    localStorage.setItem(`print_settings_${props.pageKey}`, JSON.stringify(settings))
-  }
+  saveSettingsIfNeeded()
 }
 
 const handlePrint = async () => {
@@ -513,10 +534,26 @@ onMounted(() => {
   loadPrinters()
 })
 
+// При переключении галочки "по умолчанию" — сразу сохранять
+watch(saveAsDefault, (val) => {
+  if (val) saveSettingsIfNeeded()
+})
+
+// При переключении галочки "для страницы" — сразу сохранять
+watch(saveForPage, (val) => {
+  if (val) saveSettingsIfNeeded()
+})
+
+// При изменении параметров печати — сразу сохранять если галочки стоят
+watch(printOptions, () => {
+  saveSettingsIfNeeded()
+}, { deep: true })
+
 // Следить за изменением pageKey
 watch(() => props.pageKey, () => {
   if (props.pageKey) {
     loadSavedSettings()
+    loadSavedPrinterIds()
   }
 })
 </script>
@@ -670,5 +707,18 @@ watch(() => props.pageKey, () => {
   text-align: center;
   color: #6c757d;
   font-size: 14px;
+}
+
+.printer-badge {
+  font-size: 12px;
+  margin-left: 2px;
+}
+
+.default-badge {
+  color: #f59e0b;
+}
+
+.page-badge {
+  color: #3b82f6;
 }
 </style>
